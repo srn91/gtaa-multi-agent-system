@@ -1,0 +1,104 @@
+{
+  "date": "2026-03-17",
+  "step_1_research_agent": {
+    "role": "Multi-timeframe momentum scanner",
+    "top_5_momentum": [
+      "BIL",
+      "USO",
+      "DBC",
+      "XLE",
+      "SHY"
+    ],
+    "bottom_5_momentum": [
+      "ETH-USD",
+      "VNQI",
+      "BTC-USD",
+      "XLY",
+      "XLF"
+    ],
+    "uptrend_pct": 0.6452,
+    "confidence": 0.6935483870967742,
+    "reasoning": "Scanned 31 assets. Top momentum: BIL, USO, DBC, XLE, SHY. Bottom: ETH-USD, VNQI, BTC-USD, XLY, XLF. 65% of universe above 200d SMA."
+  },
+  "step_2_ml_regime_agent": {
+    "role": "XGBoost 5-regime classifier",
+    "regime": "ELEVATED",
+    "action": "DEFENSIVE",
+    "confidence": 0.4715,
+    "bull_ratio": 0.2727,
+    "ml_trained": true,
+    "reasoning": "ML Regime: ELEVATED (confidence 47%). Action: DEFENSIVE. VaR multiplier: 0.8. Bull ratio: 0.27. Model trained."
+  },
+  "step_3_ml_direction_agent": {
+    "role": "RF + KNN per-asset ensemble",
+    "bullish_tickers": [
+      "DBC",
+      "ETH-USD",
+      "BIL"
+    ],
+    "bearish_tickers": [
+      "BTC-USD",
+      "HYG",
+      "IEF",
+      "SHY",
+      "LQD"
+    ],
+    "models_trained": 15,
+    "confidence": 0.6,
+    "top_predictions": {
+      "BIL": {
+        "direction": 1.0,
+        "confidence": 0.285,
+        "score": 0.285
+      },
+      "BTC-USD": {
+        "direction": -1.0,
+        "confidence": 0.217,
+        "score": -0.217
+      },
+      "DBC": {
+        "direction": 1.0,
+        "confidence": 0.95,
+        "score": 0.95
+      },
+      "EEM": {
+        "direction": -1.0,
+        "confidence": 0.8,
+        "score": -0.8
+      },
+      "EFA": {
+        "direction": -1.0,
+        "confidence": 0.8,
+        "score": -0.8
+      }
+    }
+  },
+  "step_4_risk_agent": {
+    "role": "Position limits, VaR, circuit breakers",
+    "proposed_weights": {
+      "BIL": 0.25,
+      "USO": 0.2,
+      "DBC": 0.15,
+      "XLE": 0.1,
+      "SHY": 0.05
+    },
+    "approved_weights": {
+      "BIL": 0.35,
+      "USO": 0.25,
+      "DBC": 0.2,
+      "XLE": 0.133333,
+      "SHY": 0.066667
+    },
+    "vetoed": false,
+    "drawdown_level": 0.0,
+    "violations": [],
+    "correlation_warnings": [
+      "USO/DBC corr=0.80, combined weight=35.0%"
+    ]
+  },
+  "step_5_pm_decision": {
+    "role": "Consensus gating",
+    "action": "EXECUTE_REBALANCE",
+    "reasoning": "All agents in agreement. Regime is favorable. Risk limits passed."
+  }
+}

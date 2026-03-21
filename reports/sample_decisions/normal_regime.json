@@ -1,0 +1,126 @@
+{
+  "date": "2024-06-28",
+  "regime": "NORMAL",
+  "scenario": "Typical bull market \u2014 equity-heavy allocation with sector rotation",
+  "step_1_research_agent": {
+    "signal_type": "momentum",
+    "top_5_momentum": [
+      "XLK",
+      "QQQ",
+      "SPY",
+      "XLY",
+      "BTC-USD"
+    ],
+    "bottom_5_momentum": [
+      "TLT",
+      "IEF",
+      "VNQI",
+      "EWJ",
+      "SHY"
+    ],
+    "uptrend_pct": 0.74,
+    "confidence": 0.72,
+    "reasoning": "Scanned 31 assets. 74% above 200d SMA. Tech and growth leading."
+  },
+  "step_2_ml_regime_agent": {
+    "signal_type": "regime",
+    "regime": "NORMAL",
+    "regime_int": 3,
+    "action": "MODERATE",
+    "confidence": 0.78,
+    "var_multiplier": 2.5,
+    "bull_ratio": 0.64,
+    "probabilities": {
+      "PANIC": 0.02,
+      "HIGH_FEAR": 0.05,
+      "ELEVATED": 0.12,
+      "NORMAL": 0.55,
+      "COMPLACENT": 0.26
+    },
+    "reasoning": "VIX at 16.2. Realized vol moderate. Momentum positive across most assets."
+  },
+  "step_3_ml_direction_agent": {
+    "signal_type": "direction",
+    "bullish_tickers": [
+      "XLK",
+      "QQQ",
+      "SPY",
+      "XLY",
+      "BTC-USD",
+      "VNQ"
+    ],
+    "bearish_tickers": [
+      "TLT",
+      "IEF",
+      "SHY"
+    ],
+    "sample_predictions": {
+      "XLK": {
+        "direction": 1.0,
+        "confidence": 0.82,
+        "note": "RF and KNN both bullish \u2014 high conviction"
+      },
+      "QQQ": {
+        "direction": 1.0,
+        "confidence": 0.79,
+        "note": "RF and KNN agree"
+      },
+      "TLT": {
+        "direction": -1.0,
+        "confidence": 0.68,
+        "note": "KNN bearish, RF neutral \u2014 KNN default"
+      },
+      "BTC-USD": {
+        "direction": 1.0,
+        "confidence": 0.61,
+        "note": "RF bullish, KNN neutral \u2014 moderate conviction"
+      }
+    },
+    "models_trained": 15
+  },
+  "step_4_allocation_agent": {
+    "signal_type": "allocation",
+    "target_weights": {
+      "XLK": 0.22,
+      "QQQ": 0.19,
+      "SPY": 0.16,
+      "XLY": 0.14,
+      "BTC-USD": 0.12,
+      "VNQ": 0.09,
+      "GLD": 0.08
+    },
+    "regime_used": "NORMAL",
+    "risk_asset_floor": "70% (met: 92%)",
+    "cash_cap": "5% (met: 0%)"
+  },
+  "step_5_risk_agent": {
+    "signal_type": "risk",
+    "approved_weights": {
+      "XLK": 0.22,
+      "QQQ": 0.19,
+      "SPY": 0.16,
+      "XLY": 0.14,
+      "BTC-USD": 0.12,
+      "VNQ": 0.09,
+      "GLD": 0.08
+    },
+    "vetoed": false,
+    "drawdown_level": -0.03,
+    "violations": [],
+    "reasoning": "All positions within caps. Portfolio vol at 16.2% (within 20% target). No circuit breakers triggered."
+  },
+  "step_6_pm_agent": {
+    "signal_type": "decision",
+    "action": "EXECUTE_REBALANCE",
+    "conviction": 0.84,
+    "consensus": 0.78,
+    "turnover": 0.12,
+    "reasoning": "All agents in agreement. Regime NORMAL with 78% confidence. Risk check passed. Turnover 12% above threshold. Execute."
+  },
+  "step_7_review_agent": {
+    "signal_type": "review",
+    "portfolio_sharpe_ytd": 1.04,
+    "max_dd_ytd": -0.08,
+    "flags": []
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "date": "2024-12-31",
+  "regime": "COMPLACENT",
+  "scenario": "Low volatility bull \u2014 maximum risk deployment with concentrated bets",
+  "step_1_research_agent": {
+    "top_5_momentum": [
+      "BTC-USD",
+      "XLK",
+      "QQQ",
+      "ETH-USD",
+      "SPY"
+    ],
+    "uptrend_pct": 0.84,
+    "confidence": 0.75,
+    "reasoning": "84% of universe above 200d SMA. Crypto and tech dominating."
+  },
+  "step_2_ml_regime_agent": {
+    "regime": "COMPLACENT",
+    "regime_int": 4,
+    "action": "AGGRESSIVE",
+    "confidence": 0.71,
+    "var_multiplier": 3.5,
+    "bull_ratio": 0.82,
+    "probabilities": {
+      "PANIC": 0.01,
+      "HIGH_FEAR": 0.02,
+      "ELEVATED": 0.06,
+      "NORMAL": 0.2,
+      "COMPLACENT": 0.71
+    }
+  },
+  "step_3_ml_direction_agent": {
+    "bullish_tickers": [
+      "BTC-USD",
+      "ETH-USD",
+      "XLK",
+      "QQQ",
+      "SPY",
+      "XLY",
+      "VNQ",
+      "SLV"
+    ],
+    "bearish_tickers": [
+      "TLT"
+    ],
+    "sample_predictions": {
+      "BTC-USD": {
+        "direction": 1.0,
+        "confidence": 0.88,
+        "note": "RF and KNN strongly agree \u2014 max conviction"
+      },
+      "XLK": {
+        "direction": 1.0,
+        "confidence": 0.84,
+        "note": "Both models bullish"
+      }
+    },
+    "models_trained": 15
+  },
+  "step_4_allocation_agent": {
+    "target_weights": {
+      "BTC-USD": 0.22,
+      "XLK": 0.2,
+      "QQQ": 0.18,
+      "ETH-USD": 0.15,
+      "SPY": 0.13,
+      "XLY": 0.07,
+      "SLV": 0.05
+    },
+    "regime_used": "COMPLACENT",
+    "risk_asset_floor": "90% (met: 100%)",
+    "cash_cap": "5% (met: 0%)"
+  },
+  "step_5_risk_agent": {
+    "approved_weights": {
+      "BTC-USD": 0.22,
+      "XLK": 0.2,
+      "QQQ": 0.18,
+      "ETH-USD": 0.15,
+      "SPY": 0.13,
+      "XLY": 0.07,
+      "SLV": 0.05
+    },
+    "vetoed": false,
+    "drawdown_level": -0.02,
+    "reasoning": "All within limits. Crypto at 37% total but under 60% class cap. Portfolio fully deployed."
+  },
+  "step_6_pm_agent": {
+    "action": "EXECUTE_REBALANCE",
+    "conviction": 0.91,
+    "reasoning": "COMPLACENT regime \u2014 maximum conviction. All agents strongly agree. Full risk deployment."
+  }
+}

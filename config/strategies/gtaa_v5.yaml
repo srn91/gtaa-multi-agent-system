@@ -1,0 +1,86 @@
+# GTAA V5 Production Strategy Configuration
+# This is the config that produced the README performance metrics.
+
+strategy:
+  name: "gtaa_v5_production"
+  version: "0.5.0"
+  description: "ML-enhanced momentum rotation with ART vol targeting"
+
+backtest:
+  start_date: "2020-01-01"
+  end_date: "2025-12-31"
+  initial_capital: 100000
+  rebalance: "monthly"  # last trading day of each month
+  warmup_days: 300
+
+momentum:
+  lookback_windows: [21, 63, 126, 252]
+  lookback_weights: [0.35, 0.30, 0.20, 0.15]
+  skip_recent_days: 3
+  use_raw_momentum_in_bull: true
+
+regime:
+  model: "xgboost"
+  retrain_every: 252  # annual retrain
+  n_regimes: 5  # PANIC, HIGH_FEAR, ELEVATED, NORMAL, COMPLACENT
+  features:
+    - vix
+    - vix_change
+    - vix_spike
+    - returns_1d
+    - momentum_5d
+    - momentum_20d
+    - momentum_accel
+    - realized_vol
+    - vol_ratio
+    - vol_trend
+    - price_vs_ma50
+    - rsi_proxy
+    - breadth
+  xgboost_params:
+    n_estimators: 50
+    max_depth: 3
+    learning_rate: 0.15
+    subsample: 0.8
+    colsample_bytree: 0.8
+
+direction:
+  model: "rf_knn_ensemble"
+  retrain_every: 252
+  min_train_samples: 200
+  rf_params:
+    n_estimators: 30
+    max_depth: 3
+    min_samples_leaf: 40
+  knn_params:
+    n_neighbors: 31
+    weights: "distance"
+  ensemble_rule: "agree_follow_disagree_knn"
+  filters:
+    atr_min: 0.005  # skip assets with < 0.5% average daily range
+    sma20_trend: true  # penalize bearish on assets in uptrends
+
+allocation:
+  top_n_assets: 6
+  ml_weight: 0.35  # 35% ML direction, 65% momentum
+  risk_asset_floors:
+    COMPLACENT: 0.90
+    NORMAL: 0.80
+    ELEVATED: 0.60
+  max_cash_in_bull: 0.05
+  sector_bonus: 0.25  # 25% scoring bonus for sector ETFs
+
+risk:
+  max_position_pct: 0.35
+  max_asset_class_pct: 0.70
+  vol_target: 0.20  # ART target
+  art_leverage_min: 0.5
+  art_leverage_max: 1.5
+  drawdown_circuit_breaker: -0.15  # 50% cash at -15% DD
+  drawdown_full_exit: -0.25  # 100% cash at -25% DD
+  bypass_in_bull: true  # skip risk agent cash padding in NORMAL/COMPLACENT
+
+costs:
+  slippage_bps: 5.0  # ETFs
+  crypto_slippage_bps: 15.0
+  commission: 0.0  # zero commission brokers

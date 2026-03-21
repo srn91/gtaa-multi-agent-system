@@ -1,0 +1,103 @@
+{
+  "date": "2022-06-30",
+  "regime": "PANIC",
+  "scenario": "Market stress \u2014 VIX spiking, system goes defensive automatically",
+  "step_1_research_agent": {
+    "top_5_momentum": [
+      "USO",
+      "XLE",
+      "DBC",
+      "GLD",
+      "BIL"
+    ],
+    "bottom_5_momentum": [
+      "ETH-USD",
+      "BTC-USD",
+      "VNQI",
+      "QQQ",
+      "XLK"
+    ],
+    "uptrend_pct": 0.29,
+    "confidence": 0.59,
+    "reasoning": "Only 29% of universe above 200d SMA. Energy is only sector with positive momentum."
+  },
+  "step_2_ml_regime_agent": {
+    "regime": "PANIC",
+    "regime_int": 0,
+    "action": "NO_TRADE",
+    "confidence": 0.83,
+    "var_multiplier": 0.0,
+    "bull_ratio": 0.18,
+    "probabilities": {
+      "PANIC": 0.61,
+      "HIGH_FEAR": 0.22,
+      "ELEVATED": 0.12,
+      "NORMAL": 0.04,
+      "COMPLACENT": 0.01
+    },
+    "reasoning": "VIX at 31.4. Realized vol 28%. Breadth collapsed. PANIC regime with 83% confidence."
+  },
+  "step_3_ml_direction_agent": {
+    "bullish_tickers": [
+      "USO",
+      "DBC"
+    ],
+    "bearish_tickers": [
+      "QQQ",
+      "XLK",
+      "SPY",
+      "BTC-USD",
+      "ETH-USD",
+      "IWM",
+      "VNQ"
+    ],
+    "sample_predictions": {
+      "SPY": {
+        "direction": -1.0,
+        "confidence": 0.74,
+        "note": "RF and KNN both bearish"
+      },
+      "QQQ": {
+        "direction": -1.0,
+        "confidence": 0.81,
+        "note": "Strong bearish consensus"
+      },
+      "GLD": {
+        "direction": 1.0,
+        "confidence": 0.56,
+        "note": "Mild bullish \u2014 safe haven demand"
+      }
+    },
+    "models_trained": 15
+  },
+  "step_4_allocation_agent": {
+    "target_weights": {
+      "GLD": 0.3,
+      "TLT": 0.2,
+      "XLP": 0.15,
+      "XLV": 0.15,
+      "IEF": 0.1,
+      "BIL": 0.1
+    },
+    "regime_used": "PANIC",
+    "note": "Hardcoded defensive allocation \u2014 no momentum-based selection during PANIC"
+  },
+  "step_5_risk_agent": {
+    "approved_weights": {
+      "GLD": 0.3,
+      "TLT": 0.2,
+      "XLP": 0.15,
+      "XLV": 0.15,
+      "IEF": 0.1,
+      "BIL": 0.1
+    },
+    "vetoed": false,
+    "drawdown_level": -0.14,
+    "reasoning": "Defensive allocation accepted. DD at -14%, approaching circuit breaker at -15%."
+  },
+  "step_6_pm_agent": {
+    "action": "EXECUTE_REBALANCE",
+    "conviction": 0.71,
+    "reasoning": "Regime PANIC with high confidence. Defensive rotation mandatory. Execute immediately."
+  }
+}
