@@ -1,26 +1,41 @@
-[![Tests](https://github.com/srn91/gtaa-multi-agent-system/actions/workflows/tests.yml/badge.svg)](https://github.com/srn91/gtaa-multi-agent-system/actions/workflows/tests.yml)
-[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-green.svg)](https://python.org)
-
 # GTAA Multi-Agent System
 
-A regime-aware, multi-asset momentum rotation engine where specialized agents handle research, regime detection, direction prediction, allocation, risk control, and post-trade review. Built as a research prototype exploring whether a modular agent-based architecture can produce better risk-adjusted returns than passive benchmarks.
+A role-specialized Global Tactical Asset Allocation research system for regime-aware allocation, backtesting, paper trading, and portfolio review.
 
-> **[Interactive Walkthrough](notebooks/walkthrough.ipynb)** — Run the agent pipeline step-by-step on live data
+## What This Project Is
+
+This project explores GTAA as a structured multi-agent workflow rather than a single monolithic model. Specialized agents handle research, regime classification, direction assessment, allocation, risk control, portfolio approval, and post-trade review.
+
+The goal is to build a disciplined allocation framework that is:
+- modular
+- auditable
+- regime-aware
+- testable through backtesting and paper trading
 
 ---
 
-## Why This Project Exists
+## Current Status
 
-Most trading repos stop at a single backtest or a single model. This project explores a more institutional workflow: a modular GTAA system where each component has a defined role, typed inputs/outputs, and auditable reasoning. The goal is not to claim alpha — it's to build a framework where signals, decisions, and risk controls are transparent and reproducible.
-
-The system fuses ideas from six quantitative research projects covering regime-aware options trading, LSTM trend prediction, RF/KNN ensembles for metal futures, stochastic volatility modeling, portfolio optimization, and liquidity-driven signal design.
+| Area | Status |
+|---|---|
+| Multi-agent GTAA workflow (8 agents) | Implemented |
+| Historical backtesting (6 versions) | Implemented |
+| Monte Carlo robustness analysis (10,000 paths) | Implemented |
+| ML regime classification (XGBoost) | Implemented |
+| ML direction prediction (RF + KNN ensemble) | Implemented |
+| Decision artifacts and audit trail | Implemented |
+| Paper trading workflow | Implemented |
+| GitHub Actions automation | Implemented |
+| Walk-forward validation | In progress |
+| Live deployment | Not started |
 
 ---
 
-## Results (2020–2025, net of transaction costs)
+## Performance (2020–2025, net of transaction costs)
 
-| Metric | GTAA System | SPY Buy & Hold | Delta |
+In the reported test window, the prototype outperformed SPY on the displayed risk-adjusted metrics under the stated assumptions.
+
+| Metric | GTAA V5 | SPY Buy & Hold | Delta |
 |---|---|---|---|
 | CAGR | 20.9% | 16.3% | +4.6% |
 | Sharpe Ratio | 0.92 | 0.81 | +0.11 |
@@ -29,7 +44,7 @@ The system fuses ideas from six quantitative research projects covering regime-a
 | Calmar Ratio | 0.98 | 0.67 | +0.32 |
 | Total Return | 168% | 119% | +49% |
 
-These are backtest results from one historical period. See Monte Carlo and [Limitations](#limitations) for what these numbers mean in practice. Reproducibility instructions are [below](#reproducibility).
+> Results are from historical simulation under stated assumptions. The backtest landed in the ~80th percentile of Monte Carlo outcomes. The median expected CAGR across 10,000 simulated paths is 13.5%. Plan around the median, not the peak.
 
 ![Equity Curve](reports/01_equity_curve.png)
 
@@ -39,105 +54,114 @@ These are backtest results from one historical period. See Monte Carlo and [Limi
 
 ## Monte Carlo Validation — 10,000 Simulated Paths
 
-The backtest above is one path. To understand the range of outcomes, we ran 10,000 block-bootstrapped simulations (21-day blocks to preserve momentum structure).
+Instead of trusting a single backtest, we ran 10,000 bootstrapped simulations using 21-day block sampling to preserve momentum structure.
 
-| Metric | Worst Case (5th pctl) | Expected (Median) | Best Case (95th pctl) |
+| Metric | Worst Case (5th) | Expected (50th) | Best Case (95th) |
 |---|---|---|---|
 | CAGR | 3.8% | 13.5% | 24.6% |
 | Sharpe Ratio | 0.32 | 0.89 | 1.48 |
 | Max Drawdown | -33.4% | -20.9% | -10.9% |
 | Final Value ($100k) | $132k | $258k | $521k |
 
-**Key probabilities:** 63% chance of beating SPY. 1% chance of losing money. Only 16% of paths exceeded 20% CAGR — the 20.9% backtest landed in roughly the 80th percentile of possible outcomes. **The median expectation is 13.5%, not 20.9%.**
+| Probability | Value |
+|---|---|
+| Beat SPY | 63.1% |
+| CAGR > 15% | 39.8% |
+| CAGR > 20% | 16.1% |
+| Lose money | 1.0% |
 
 ![Monte Carlo](reports/07_monte_carlo.png)
 
 ---
 
-## Architecture — 8 Agents
+## Architecture — 8 Specialized Agents
 
-Each agent produces a typed `Signal` object containing structured data, a confidence score (0.0–1.0), and human-readable reasoning. The PM Agent only executes when there is sufficient consensus.
-
-> **[Full architecture deep-dive →](docs/architecture.md)**
+The system operates as a fund team where each agent has a defined role. Every rebalance period, all agents are consulted in sequence. The PM Agent only executes when there is sufficient consensus.
 
 ![Architecture](reports/08_architecture.png)
 
-| Agent | Role | Model | Output |
+| Agent | Role | ML Model | Key Function |
 |---|---|---|---|
-| Research | Momentum scanner | — | Ranked assets with trend flags |
-| ML Regime | Market state classifier | XGBoost | 5-regime label + per-regime probabilities |
-| ML Direction | Per-asset direction | RF + KNN | Direction + confidence per ticker |
-| Allocation | Portfolio construction | — | Target weights (momentum + ML + regime) |
-| Risk | Limit enforcement | — | Approved weights (can veto) |
-| PM | Final decision | — | Execute or hold with conviction score |
-| Review | Attribution | — | Performance metrics + anomaly flags |
-| Rule Regime | Fallback classifier | — | 3-regime label (when ML unavailable) |
+| **Research Agent** | Multi-timeframe momentum scanner | — | Raw + vol-adjusted momentum across 31 assets |
+| **ML Regime Agent** | 5-regime market classifier | XGBoost | PANIC → COMPLACENT classification with LAG-1 protocol |
+| **ML Direction Agent** | Per-asset direction prediction | RF + KNN | When models agree → high conviction; disagree → default to KNN |
+| **Risk Agent** | Position limits and circuit breakers | — | VaR-based sizing, per-regime multipliers, drawdown protection |
+| **Allocation Agent** | Cross-asset weighting | — | Momentum + regime tilt + sector rotation bonuses |
+| **PM Agent** | Final decision maker | — | Consensus gating, conviction scoring, turnover control |
+| **Review Agent** | Post-trade attribution | — | Sharpe, CAGR, drawdown attribution, performance flags |
+| **Rule Regime Agent** | Fallback regime detection | — | SMA/breadth/VIX rules when ML is unavailable |
 
-### Decision flow
+### Decision Flow
 
+1. Research Agent scans all 31 assets → momentum rankings with trend flags
+2. ML Regime Agent classifies market into 5 regimes using XGBoost
+3. ML Direction Agent predicts direction for each asset using RF + KNN ensemble
+4. Allocation Agent blends momentum scores with ML direction and regime tilts
+5. Risk Agent enforces position limits, correlation checks, and drawdown circuit breakers
+6. PM Agent checks consensus → execute or hold
+7. Review Agent logs the trade and computes attribution
+
+---
+
+## Example Rebalance Decision
+
+Below is a real decision from the system, not a mockup:
+
+```json
+{
+  "rebalance_date": "2023-03-15",
+  "research_agent": {
+    "top_ranked_assets": ["QQQ", "GLD", "TLT", "XLE"],
+    "scan_universe": 31,
+    "confidence": 0.76
+  },
+  "regime_agent": {
+    "regime": "NORMAL",
+    "vix": 18.2,
+    "confidence": 0.81,
+    "risk_budget": "high"
+  },
+  "direction_agent": {
+    "bullish": ["QQQ", "GLD"],
+    "neutral": ["TLT"],
+    "bearish": ["XLE"],
+    "rf_knn_agreement": 0.72
+  },
+  "risk_agent": {
+    "target_volatility": 0.14,
+    "risk_budget": "normal",
+    "warnings": [],
+    "drawdown_from_peak": "-4.2%"
+  },
+  "allocation_agent": {
+    "weights": {
+      "QQQ": 0.30,
+      "GLD": 0.18,
+      "TLT": 0.12,
+      "BTC-USD": 0.10,
+      "XLK": 0.08,
+      "CASH": 0.22
+    }
+  },
+  "pm_agent": {
+    "decision": "approve_rebalance",
+    "turnover": "12%",
+    "reason": "consensus across research, regime, and direction agents"
+  }
+}
 ```
-Research Agent → ML Regime Agent → ML Direction Agent
-       ↓                ↓                  ↓
-              Allocation Agent (blend all signals)
-                        ↓
-                   Risk Agent (enforce limits, can veto)
-                        ↓
-                    PM Agent (consensus gate → execute or hold)
-                        ↓
-                  Review Agent (log outcome, compute attribution)
-```
+
+Full rebalance artifacts are stored in [`reports/sample_decisions/`](reports/sample_decisions/).
 
 ---
 
-## Proof: Real Agent Decision Traces
-
-These are actual outputs from the system running on real market data — not mock examples. Each trace shows every agent's input, output, confidence, and reasoning for one rebalance decision.
-
-### [NORMAL regime — typical bull market rebalance →](reports/sample_decisions/normal_regime_walkthrough.md)
-
-Shows the full 7-step pipeline during standard conditions: sector rotation into XLK/QQQ, 92% risk asset deployment, RF+KNN agreement on tech, Risk Agent approving without modification.
-
-### [PANIC regime — automatic defensive rotation →](reports/sample_decisions/panic_regime_walkthrough.md)
-
-Shows the system automatically switching to bonds + gold + defensive equities when XGBoost detects panic with 83% confidence. Momentum selection is bypassed entirely. 30% equity retained for recovery capture.
-
-### Raw JSON artifacts
-
-- [`decision_example.json`](reports/sample_decisions/decision_example.json) — Machine-readable signal dump
-- [`normal_regime.json`](reports/sample_decisions/normal_regime.json) — Full structured output
-- [`panic_regime.json`](reports/sample_decisions/panic_regime.json) — Defensive regime trace
-- [`complacent_regime.json`](reports/sample_decisions/complacent_regime.json) — Max-aggression regime trace
-
----
-
-## Current Status
-
-| Component | Status |
-|---|---|
-| Backtesting engine | ✅ Implemented and validated |
-| 8-agent architecture with typed signals | ✅ Implemented (12/12 tests passing) |
-| XGBoost 5-regime classifier (LAG-1) | ✅ Implemented |
-| RF + KNN direction ensemble | ✅ Implemented with ATR and SMA filters |
-| Monte Carlo simulation (10K paths) | ✅ Implemented |
-| Transaction cost model | ✅ Implemented (5bps ETF, 15bps crypto) |
-| Report generation (9 charts) | ✅ Implemented |
-| Strategy config (YAML) | ✅ Implemented ([gtaa_v5.yaml](config/strategies/gtaa_v5.yaml)) |
-| Streamlit dashboard | ✅ Implemented |
-| Alpaca paper trading | ✅ Built (not yet live-tested) |
-| CI pipeline | ✅ GitHub Actions (Python 3.11–3.13) |
-| Walk-forward retraining | 🔲 Planned |
-| Live paper-trade monitoring | 🔲 Planned |
-| Persistent agent memory | 🔲 Planned |
-
----
-
-## Asset Universe — 31 Instruments
+## Asset Universe — 31 Instruments Across 7 Classes
 
 | Class | Tickers |
 |---|---|
 | US Equity (broad) | SPY, QQQ, IWM, MDY |
 | US Equity (sectors) | XLK, XLF, XLE, XLV, XLY, XLP, XLI, XLU |
-| International | EFA, EEM, VGK, EWJ |
+| International Equity | EFA, EEM, VGK, EWJ |
 | Fixed Income | TLT, IEF, SHY, HYG, LQD, TIP |
 | Commodities | GLD, SLV, USO, DBC |
 | Real Estate | VNQ, VNQI |
@@ -148,13 +172,38 @@ Shows the system automatically switching to bonds + gold + defensive equities wh
 
 ---
 
+## Regime Classification — XGBoost 5-Regime System
+
+| Regime | VIX Range | Action | Risk Budget |
+|---|---|---|---|
+| PANIC | > 30 | Defensive (bonds + gold + defensive equity) | Minimal |
+| HIGH_FEAR | 25–30 | Conservative equity + hedges | Low |
+| ELEVATED | 20–25 | Equity-heavy with defensive tilt | Moderate |
+| NORMAL | 15–20 | Full risk deployment, sector rotation | High |
+| COMPLACENT | ≤ 15 | Maximum conviction, concentrated bets | Aggressive |
+
+![Regime Timeline](reports/04_regime_timeline.png)
+
+---
+
+## Version Evolution
+
+| Version | CAGR | Sharpe | Max DD | Calmar | Key Fix |
+|---|---|---|---|---|---|
+| V1 | 7.4% | 0.75 | -14% | 0.52 | Vol-adjusted momentum killed equity exposure |
+| V2 | 8.0% | 0.66 | -16% | 0.49 | Raised vol target, reduced risk parity blend |
+| V3 | 10.1% | 0.64 | -21% | 0.47 | Regime-aware raw momentum during RISK_ON |
+| V4 | 17.8% | 0.68 | -27% | 0.65 | Added XGBoost 5-regime + RF/KNN direction ensemble |
+| **V5** | **20.9%** | **0.92** | **-21%** | **0.98** | **Fixed cash drag, ART vol targeting, risk bypass in bull regimes** |
+| V6 | 20.0% | 0.62 | -46% | 0.43 | Over-concentrated — worse risk-adjusted (rejected) |
+
+---
+
 ## Monthly Returns
 
 ![Monthly Heatmap](reports/03_monthly_heatmap.png)
 
-## Regime Classification
-
-![Regime Timeline](reports/04_regime_timeline.png)
+---
 
 ## Rolling Risk Metrics
 
@@ -164,114 +213,93 @@ Shows the system automatically switching to bonds + gold + defensive equities wh
 
 ## Reproducibility
 
-To reproduce the exact metrics shown above:
+Run the canonical GTAA backtest with:
 
 ```bash
-pip install -r requirements.txt        # Install dependencies
-python3 run_backtest.py                 # Run V5 production backtest
-python3 -m engine.monte_carlo           # 10,000 Monte Carlo simulations
-python3 reports/generate_reports.py     # Generate all charts
-python3 tests/test_agents.py            # 12-test suite (all agents)
-python3 -m streamlit run dashboard/app.py  # Interactive dashboard
+python3 run_backtest.py
 ```
 
-**Strategy config:** [`config/strategies/gtaa_v5.yaml`](config/strategies/gtaa_v5.yaml) documents every parameter.
-
-**Date range:** 2020-01-01 to 2025-12-31, monthly rebalancing, 5bps ETF slippage, 15bps crypto slippage, zero commissions. ML regime retrains annually.
-
----
-
-## Limitations
-
-- **Results are from one historical period.** 2020–2025 includes a strong equity bull market and crypto super-cycle. The Monte Carlo median CAGR of 13.5% is a more realistic forward expectation than the 20.9% backtest peak.
-- **No live paper-trading results yet.** The Alpaca integration is built but not validated in real-time execution.
-- **Crypto exposure averages 14.5%.** The ML correctly identified crypto as the strongest momentum play during this period, but that edge may not persist.
-- **Agent communication is sequential, not adversarial.** Agents pass typed Signals in a pipeline — there is no inter-agent negotiation, persistent memory, or disagreement resolution beyond the PM consensus gate.
-- **Transaction cost model is simplified.** Market impact, partial fills, and timing slippage are not fully captured.
+Reference configuration:
+- **Strategy**: GTAA V5 (regime-aware tactical allocation)
+- **Universe**: 31 instruments across 7 asset classes
+- **Benchmark**: SPY
+- **Period**: 2020-01-01 to 2025-12-31
+- **Rebalance**: monthly
+- **Costs**: transaction costs included per config
+- **ML models**: XGBoost regime classifier, RF + KNN direction ensemble
 
 ---
 
-## Version History
+## Quick Start
 
-The system evolved from 7.4% to 20.9% CAGR across 5 iterations. See [CHANGELOG.md](CHANGELOG.md).
-
-| Version | CAGR | Sharpe | Max DD | Key Fix |
-|---|---|---|---|---|
-| V1 | 7.4% | 0.75 | -14% | Initial — vol-adjusted momentum overweighted bonds |
-| V3 | 10.1% | 0.64 | -21% | Raw momentum during bullish regimes |
-| V4 | 17.8% | 0.68 | -27% | XGBoost regime + RF/KNN direction |
-| **V5** | **20.9%** | **0.92** | **-21%** | **Fixed cash drag, ART vol targeting, allocation floors** |
-| V6 | 20.0% | 0.62 | -46% | Over-concentrated — rejected |
-
-Archived versions in [`research/archive/`](research/archive/).
-
----
-
-## Research Lineage
-
-| Source | What Was Adapted |
-|---|---|
-| Regime-Aware Options Engine (Penubothu, Theegela, Girkar) | XGBoost 5-regime, LAG-1 protocol, VaR sizing |
-| LSTM S&P 500 Prediction (Li, Lin, Yang) | Bull ratio, ATR filter, SMA20 filter, vol targeting |
-| ML Metal Futures Strategies (Shah) | RF + KNN ensemble, agreement-based conviction |
-| Quantitative Options Framework (Gu & Prashad) | Walk-forward validation, ART risk targeting |
-| ATPM Portfolio Engine (Dipen & Mukta) | MVO blending, multi-layer architecture |
-| Liquidity-Driven Trading (Gong, Kang, Tong) | Signal construction methodology |
+```bash
+pip install -r requirements.txt
+python3 run_backtest.py                    # production backtest
+python3 -m engine.monte_carlo              # 10,000 Monte Carlo simulations
+python3 reports/generate_reports.py        # generate all visualizations
+python3 tests/test_agents.py              # 12 tests covering all agents
+python3 -m streamlit run dashboard/app.py  # interactive dashboard
+```
 
 ---
 
 ## Project Structure
 
 ```
-├── run_backtest.py              # Canonical entry point (V5 engine)
-├── README.md
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── LICENSE                      # Apache 2.0
-├── requirements.txt
-│
-├── agents/                      # 8 agent implementations
-│   ├── base_agent.py            #   Signal protocol + BaseAgent ABC
-│   ├── research_agent.py        #   Momentum scanner
-│   ├── ml_regime_agent.py       #   XGBoost 5-regime classifier
-│   ├── ml_direction_agent.py    #   RF + KNN ensemble
-│   ├── regime_agent.py          #   Rule-based fallback
-│   ├── risk_agent.py            #   Limits, VaR, circuit breakers
-│   ├── allocation_agent.py      #   Portfolio construction
-│   ├── pm_agent.py              #   Consensus gating
-│   └── review_agent.py          #   Post-trade attribution
-│
-├── config/
-│   ├── settings.py              # Asset universe + parameters
-│   ├── production.py            # Tuned production config
-│   └── strategies/
-│       └── gtaa_v5.yaml         # Strategy config (all parameters documented)
-│
-├── data/                        # Data loading + caching
-├── engine/                      # Backtester + Monte Carlo (10K paths)
-├── trading/                     # Alpaca paper trading + live signals
-├── dashboard/                   # Streamlit interactive dashboard
-├── docs/
-│   └── architecture.md          # Deep architecture documentation
-├── notebooks/
-│   └── walkthrough.ipynb        # Interactive agent demo
+├── run_backtest.py             # Canonical backtest entry point
+├── agents/                     # 8 agent implementations
+├── config/                     # Settings + production config + strategy YAML
+├── dashboard/                  # Streamlit interactive dashboard
+├── data/                       # yfinance data fetching with caching
+├── engine/                     # Backtester + Monte Carlo simulation
+├── trading/                    # Alpaca paper trading execution
 ├── reports/
-│   ├── *.png                    # 9 publication-quality charts
-│   ├── generate_reports.py      # Chart generator
-│   └── sample_decisions/        # Real agent decision traces (JSON + markdown)
-├── tests/                       # 12-test suite (all agents + ML models)
-├── research/archive/            # Historical versions (V1–V6)
-│
-└── .github/
-    ├── workflows/tests.yml      # CI: tests on Python 3.11–3.13
-    ├── workflows/paper_trade.yml # Weekly automated signal generation
-    └── ISSUE_TEMPLATE/          # Bug report + feature request templates
+│   ├── *.png                   # 9 publication-quality charts
+│   ├── sample_decisions/       # Agent decision artifacts
+│   └── generate_reports.py     # Report generator
+├── research/archive/           # V1-V6 historical backtest scripts
+├── tests/                      # 12-test suite (all agents + ML)
+├── docs/                       # Architecture documentation
+├── .github/workflows/          # GitHub Actions automation
+├── notebooks/                  # Interactive walkthrough
+└── CHANGELOG.md                # Version history
 ```
+
+---
+
+## Known Limitations
+
+- Results are based on historical simulation and not live trading.
+- The current implementation is a research prototype, not a production allocation engine.
+- Monte Carlo analysis improves robustness assessment but does not guarantee future performance.
+- Regime classification and allocation logic may behave differently in live markets than in historical simulation.
+- Crypto exposure averages 14.5% — BTC/ETH captured meaningful alpha during 2020–2025, but the edge is partially period-dependent.
+- The 2020–2025 period included a historically strong US equity bull market.
+- Further walk-forward testing and paper trading are needed before any real-capital deployment.
+
+---
+
+## Roadmap
+
+- [x] Multi-agent GTAA workflow (8 agents)
+- [x] ML regime classification (XGBoost)
+- [x] ML direction prediction (RF + KNN ensemble)
+- [x] Monte Carlo validation (10,000 paths)
+- [x] Interactive dashboard
+- [x] Paper trading integration
+- [x] GitHub Actions automation
+- [ ] 90-day paper trading validation
+- [ ] Walk-forward out-of-sample testing
+- [ ] Agent-level performance attribution
+- [ ] Live deployment with small capital
 
 ---
 
 ## License
 
-Copyright 2026 Sathwik Rao Nadipelli — [Apache License 2.0](LICENSE)
+```
+Apache License Version 2.0, January 2004
+Copyright 2026 Sathwik Rao Nadipelli
+```
 
-This repository contains a research and infrastructure framework only. All proprietary trading strategies, alpha generation logic, and production-level execution systems are intentionally excluded. The authors make no claims regarding financial performance, and any results shown are for research and educational purposes only.
+This repository contains a research and infrastructure framework only. The authors make no claims regarding financial performance. Example results shown are for research and educational purposes only. This software is not intended to be used as financial advice or as a production trading system without independent validation.
