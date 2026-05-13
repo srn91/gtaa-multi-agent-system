@@ -2,6 +2,23 @@
 
 A role-specialized Global Tactical Asset Allocation research system for regime-aware allocation, backtesting, paper trading, and portfolio review.
 
+
+## Proof Snapshot
+
+| Signal | Current evidence |
+|---|---|
+| Research scope | GTAA workflow uses `8` specialized agents across research, regime, direction, allocation, risk, PM approval, and review. |
+| Reported test window | Current performance table covers `2020-2025` net of transaction costs. |
+| Risk-adjusted result | GTAA V5 reports `20.9%` CAGR, `0.92` Sharpe, `-21.3%` max drawdown, and `168%` total return under stated assumptions. |
+| Robustness check | Monte Carlo validation runs `10,000` bootstrapped paths with median expected CAGR `13.5%` and `63.1%` probability of beating SPY. |
+| Test evidence | Repo documents `12` tests covering agents and ML workflow behavior. |
+
+## What This Proves
+
+- Asset allocation is modeled as a regime-aware, auditable multi-agent workflow.
+- The research includes stress testing through Monte Carlo simulation instead of relying only on one backtest path.
+- The evidence maps to Applied ML, quantitative research, financial AI, and agentic decision systems.
+
 ## What This Project Is
 
 This project explores GTAA as a structured multi-agent workflow rather than a single monolithic model. Specialized agents handle research, regime classification, direction assessment, allocation, risk control, portfolio approval, and post-trade review.
